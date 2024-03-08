@@ -83,6 +83,9 @@ namespace RGBE.Boy
         [FieldOffset(8)]
         public ushort SP;
 
+        [FieldOffset(8)]
+        public byte SP_Ref;
+
         /// <summary>
         /// Program Counter register.
         /// </summary>

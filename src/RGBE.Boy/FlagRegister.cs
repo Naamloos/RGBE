@@ -31,4 +31,12 @@ namespace RGBE.Boy
         /// </summary>
         Carry       = 0b00010000,
     }
+
+    public static class FlagRegisterExtensions
+    {
+        public static bool HasFlag(this FlagRegister value, FlagRegister flag)
+        {
+            return (value & flag) == flag;
+        }
+    }
 }
