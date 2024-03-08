@@ -34,7 +34,7 @@ namespace RGBE.Boy
             switch(opCode)
             {
                 default:
-                    throw new NotImplementedException($"Opcode {opCode:X2} not implemented.");
+                    throw new NotImplementedException($"Invalid OpCode encountered! {opCode:X2} not implemented. Addr: {registers.PC:X4}");
                 case 0x00: // NOP
                     return 4;
                 case 0x01: // LD BC, nn
