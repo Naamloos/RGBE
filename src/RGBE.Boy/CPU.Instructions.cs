@@ -357,9 +357,189 @@ namespace RGBE.Boy
                     return SBC(ref registers.A, ref memoryBank.GetMemoryRef(registers.HL));
                 case 0x9F: // SBC A, A
                     return SBC(ref registers.A, ref registers.A);
-                case 0xA0: // AND B
+                case 0xA0: // AND A, B
                     return AND(ref registers.A, ref registers.B);
+                case 0xA1: // AND A, C
+                    return AND(ref registers.A, ref registers.C);
+                case 0xA2: // AND A, D
+                    return AND(ref registers.A, ref registers.D);
+                case 0xA3: // AND A, E
+                    return AND(ref registers.A, ref registers.E);
+                case 0xA4: // AND A, H
+                    return AND(ref registers.A, ref registers.H);
+                case 0xA5: // AND A, L
+                    return AND(ref registers.A, ref registers.L);
+                case 0xA6: // AND A, (HL)
+                    return AND(ref registers.A, ref memoryBank.GetMemoryRef(registers.HL));
+                case 0xA7: // AND A, A
+                    return AND(ref registers.A, ref registers.A);
+                case 0xA8: // XOR A, B
+                    return XOR(ref registers.A, ref registers.B);
+                case 0xA9: // XOR A, C
+                    return XOR(ref registers.A, ref registers.C);
+                case 0xAA: // XOR A, D
+                    return XOR(ref registers.A, ref registers.D);
+                case 0xAB: // XOR A, E
+                    return XOR(ref registers.A, ref registers.E);
+                case 0xAC: // XOR A, H
+                    return XOR(ref registers.A, ref registers.H);
+                case 0xAD: // XOR A, L
+                    return XOR(ref registers.A, ref registers.L);
+                case 0xAE: // XOR A, (HL)
+                    return XOR(ref registers.A, ref memoryBank.GetMemoryRef(registers.HL));
+                case 0xAF: // XOR A, A
+                    return XOR(ref registers.A, ref registers.A);
+                case 0xB0: // OR A, B
+                    return OR(ref registers.A, ref registers.B);
+                case 0xB1: // OR A, C
+                    return OR(ref registers.A, ref registers.C);
+                case 0xB2: // OR A, D
+                    return OR(ref registers.A, ref registers.D);
+                case 0xB3: // OR A, E
+                    return OR(ref registers.A, ref registers.E);
+                case 0xB4: // OR A, H
+                    return OR(ref registers.A, ref registers.H);
+                case 0xB5: // OR A, L
+                    return OR(ref registers.A, ref registers.L);
+                case 0xB6: // OR A, (HL)
+                    return OR(ref registers.A, ref memoryBank.GetMemoryRef(registers.HL));
+                case 0xB7: // OR A, A
+                    return OR(ref registers.A, ref registers.A);
+                case 0xB8: // CP A, B
+                    return CP(ref registers.A, ref registers.B);
+                case 0xB9: // CP A, C
+                    return CP(ref registers.A, ref registers.C);
+                case 0xBA: // CP A, D
+                    return CP(ref registers.A, ref registers.D);
+                case 0xBB: // CP A, E
+                    return CP(ref registers.A, ref registers.E);
+                case 0xBC: // CP A, H
+                    return CP(ref registers.A, ref registers.H);
+                case 0xBD: // CP A, L
+                    return CP(ref registers.A, ref registers.L);
+                case 0xBE: // CP A, (HL)
+                    return CP(ref registers.A, ref memoryBank.GetMemoryRef(registers.HL));
+                case 0xBF: // CP A, A
+                    return CP(ref registers.A, ref registers.A);
+                case 0xC0: // RET NZ
+                    return RETNZ();
+                case 0xC1: // POP BC
+                    return POP(ref registers.BC);
+                case 0xC2: // JP NZ, nn
+                    return JPNZ(ref memoryBank.GetMemoryRef(registers.PC));
+                case 0xC3: // JP nn
+                    return JP(ref memoryBank.GetMemoryRef(registers.PC));
+                case 0xC4: // CALL NZ, nn
+                    return CALLNZ(ref memoryBank.GetMemoryRef(registers.PC));
+                case 0xC5: // PUSH BC
+                    return PUSH(ref registers.BC);
+                case 0xC6: // ADD A, n
+                    return ADD_8bit(ref registers.A, ref memoryBank.GetMemoryRef(registers.PC));
+                case 0xC7: // RST 00H
+                    return RST(0x00);
+                case 0xC8: // RET Z
+                    return RETZ();
+                case 0xC9: // RET
+                    return RET();
+                case 0xCA: // JP Z, nn
+                    return JPZ(ref memoryBank.GetMemoryRef(registers.PC));
+                case 0xCB: // PREFIX CB
+                    return executePrefixed();
+                case 0xCC: // CALL Z, nn
+                    return CALLZ(ref memoryBank.GetMemoryRef(registers.PC));
+                case 0xCD: // CALL nn
+                    return CALL(ref memoryBank.GetMemoryRef(registers.PC));
+                case 0xCE: // ADC A, n
+                    return ADC(ref registers.A, ref memoryBank.GetMemoryRef(registers.PC));
+                case 0xCF: // RST 08H
+                    return RST(0x08);
+                case 0xD0: // RET NC
+                    return RETNC();
+                case 0xD1: // POP DE
+                    return POP(ref registers.DE);
+                case 0xD2: // JP NC, nn
+                    return JPNC(ref memoryBank.GetMemoryRef(registers.PC));
+                case 0xD4: // CALL NC, nn
+                    return CALLNC(ref memoryBank.GetMemoryRef(registers.PC));
+                case 0xD5: // PUSH DE
+                    return PUSH(ref registers.DE);
+                case 0xD6: // SUB A, n
+                    return SUB(ref registers.A, ref memoryBank.GetMemoryRef(registers.PC));
+                case 0xD7: // RST 10H
+                    return RST(0x10);
+                case 0xD8: // RET C
+                    return RETC();
+                case 0xD9: // RETI
+                    return RETI();
+                case 0xDA: // JP C, nn
+                    return JPC(ref memoryBank.GetMemoryRef(registers.PC));
+                case 0xDC: // CALL C, nn
+                    return CALLC(ref memoryBank.GetMemoryRef(registers.PC));
+                case 0xDE: // SBC A, n
+                    return SBC(ref registers.A, ref memoryBank.GetMemoryRef(registers.PC));
+                case 0xDF: // RST 18H
+                    return RST(0x18);
+                case 0xE0: // LD (FF00+n), A
+                    // TODO check
+                    return LD_8bit(ref memoryBank.GetMemoryRef((ushort)(0xFF00 + memoryBank.GetMemoryRef(registers.PC))), ref registers.A);
+                case 0xE1: // POP HL
+                    return POP(ref registers.HL);
+                case 0xE2: // LD (FF00+C), A
+                    // TODO check
+                    return LD_8bit(ref memoryBank.GetMemoryRef((ushort)(0xFF00 + registers.C)), ref registers.A);
+                case 0xE5: // PUSH HL
+                    return PUSH(ref registers.HL);
+                case 0xE6: // AND A, n
+                    return AND(ref registers.A, ref memoryBank.GetMemoryRef(registers.PC));
+                case 0xE7: // RST 20H
+                    return RST(0x20);
+                case 0xE8: // ADD SP, n
+                    return ADD_16bit(ref registers.SP, ref memoryBank.GetShortMemoryRef(registers.PC));
+                case 0xE9: // JP (HL)
+                    return JP(ref registers.H);
+                case 0xEA: // LD (nn), A
+                    return LD_8bit(ref memoryBank.GetMemoryRef(registers.PC), ref registers.A);
+                case 0xEE: // XOR A, n
+                    return XOR(ref registers.A, ref memoryBank.GetMemoryRef(registers.PC));
+                case 0xEF: // RST 28H
+                    return RST(0x28);
+                case 0xF0: // LD A, (FF00+n)
+                    // TODO check
+                    return LD_8bit(ref registers.A, ref memoryBank.GetMemoryRef((ushort)(0xFF00 + memoryBank.GetMemoryRef(registers.PC))));
+                case 0xF1: // POP AF
+                    return POP(ref registers.AF);
+                case 0xF2: // LD A, (FF00+C)
+                    // TODO check
+                    return LD_8bit(ref registers.A, ref memoryBank.GetMemoryRef((ushort)(0xFF00 + registers.C)));
+                case 0xF3: // DI
+                    //return DI();
+                    throw new NotImplementedException("DI not implemented.");
+                case 0xF5: // PUSH AF
+                    return PUSH(ref registers.AF);
+                case 0xF6: // OR A, n
+                    return OR(ref registers.A, ref memoryBank.GetMemoryRef(registers.PC));
+                case 0xF7: // RST 30H
+                    return RST(0x30);
+                case 0xF8: // LD HL, SP+n
+                    return LD_16bit(ref registers.H, ref registers.SP_Ref);
+                case 0xF9: // LD SP, HL
+                    return LD_16bit(ref registers.SP_Ref, ref registers.H);
+                case 0xFA: // LD A, (nn)
+                    return LD_8bit(ref registers.A, ref memoryBank.GetMemoryRef(registers.PC));
+                case 0xFB: // EI
+                    //return EI();
+                    throw new NotImplementedException("EI not implemented.");
+                case 0xFE: // CP A, n
+                    return CP(ref registers.A, ref memoryBank.GetMemoryRef(registers.PC));
+                case 0xFF: // RST 38H
+                    return RST(0x38);
             }
+        }
+
+        private byte executePrefixed()
+        {
+            // TODO implement prefixed instructions
+            return 69;
         }
 
         /// <summary>
@@ -647,6 +827,220 @@ namespace RGBE.Boy
                 registers.F |= FlagRegister.Zero;
             }
             return 4;
+        }
+
+        private byte XOR(ref byte output, ref byte input)
+        {
+            // TODO check
+            output ^= input;
+            registers.F = 0;
+            if (output == 0)
+            {
+                registers.F |= FlagRegister.Zero;
+            }
+            return 4;
+        }
+
+        private byte OR(ref byte output, ref byte input)
+        {
+            // TODO check
+            output |= input;
+            registers.F = 0;
+            if (output == 0)
+            {
+                registers.F |= FlagRegister.Zero;
+            }
+            return 4;
+        }
+
+        private byte CP(ref byte output, ref byte input)
+        {
+            // TODO check
+            var result = output - input;
+            registers.F = FlagRegister.Subtract;
+            if (result == 0)
+            {
+                registers.F |= FlagRegister.Zero;
+            }
+            if (input > output)
+            {
+                registers.F |= FlagRegister.Carry;
+            }
+            if ((input & 0x0F) > (output & 0x0F))
+            {
+                registers.F |= FlagRegister.HalfCarry;
+            }
+            return 4;
+        }
+
+        private byte RETNZ()
+        {
+            if (!registers.F.HasFlag(FlagRegister.Zero))
+            {
+                registers.PC = memoryBank.GetMemoryRef(registers.SP);
+                registers.SP += 2;
+                return 20;
+            }
+            return 8;
+        }
+
+        private byte POP(ref ushort value)
+        {
+            value = memoryBank.GetMemoryRef(registers.SP);
+            registers.SP += 2;
+            return 12;
+        }
+
+        private byte JPNZ(ref byte offset)
+        {
+            if (!registers.F.HasFlag(FlagRegister.Zero))
+            {
+                registers.PC = offset;
+                return 16;
+            }
+            return 12;
+        }
+
+        private byte JPZ(ref byte offset)
+        {
+            if (registers.F.HasFlag(FlagRegister.Zero))
+            {
+                registers.PC = offset;
+                return 16;
+            }
+            return 12;
+        }
+
+        private byte JP(ref byte offset)
+        {
+            registers.PC = offset;
+            return 16;
+        }
+
+        private byte JPNC(ref byte offset)
+        {
+            if (!registers.F.HasFlag(FlagRegister.Carry))
+            {
+                registers.PC = offset;
+                return 16;
+            }
+            return 12;
+        }
+        
+        private byte JPC(ref byte offset)
+        {
+            if (registers.F.HasFlag(FlagRegister.Carry))
+            {
+                registers.PC = offset;
+                return 16;
+            }
+            return 12;
+        }
+
+        private byte CALLNC(ref byte offset)
+        {
+            if (!registers.F.HasFlag(FlagRegister.Carry))
+            {
+                // TODO implement
+                return 24;
+            }
+            return 12;
+        }
+
+        private byte CALLNZ(ref byte offset)
+        {
+            if (!registers.F.HasFlag(FlagRegister.Zero))
+            {
+                // TODO implement?>??? 
+                registers.PC = offset;
+                return 24;
+            }
+            return 12;
+        }
+
+        private byte PUSH(ref ushort value)
+        {
+            registers.SP -= 2;
+            // TODO implement
+            return 16;
+        }
+
+        private byte RST(byte offset)
+        {
+            // TODO implement
+            return 16;
+        }
+
+        private byte RETZ()
+        {
+            if (registers.F.HasFlag(FlagRegister.Zero))
+            {
+                registers.PC = memoryBank.GetMemoryRef(registers.SP);
+                registers.SP += 2;
+                return 20;
+            }
+            return 8;
+        }
+
+        private byte RET()
+        {
+            registers.PC = memoryBank.GetMemoryRef(registers.SP);
+            registers.SP += 2;
+            return 16;
+        }
+
+        private byte RETNC()
+        {
+            if (!registers.F.HasFlag(FlagRegister.Carry))
+            {
+                registers.PC = memoryBank.GetMemoryRef(registers.SP);
+                registers.SP += 2;
+                return 20;
+            }
+            return 8;
+        }
+
+        private byte RETI()
+        {
+            // TODO implement
+            return 16;
+        }
+
+        private byte RETC()
+        {
+            if (registers.F.HasFlag(FlagRegister.Carry))
+            {
+                registers.PC = memoryBank.GetMemoryRef(registers.SP);
+                registers.SP += 2;
+                return 20;
+            }
+            return 8;
+        }
+
+        private byte CALLZ(ref byte offset)
+        {
+            if (registers.F.HasFlag(FlagRegister.Zero))
+            {
+                // TODO implement
+                return 24;
+            }
+            return 12;
+        }
+
+        private byte CALL(ref byte offset)
+        {
+            // TODO implement
+            return 24;
+        }
+
+        private byte CALLC(ref byte offset)
+        {
+            if (registers.F.HasFlag(FlagRegister.Carry))
+            {
+                // TODO implement
+                return 24;
+            }
+            return 12;
         }
     }
 }

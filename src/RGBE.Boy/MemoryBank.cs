@@ -1,4 +1,5 @@
 using System.Net.Sockets;
+using System.Runtime.CompilerServices;
 
 namespace RGBE.Boy
 {
@@ -39,6 +40,11 @@ namespace RGBE.Boy
         {
             memory = new byte[65536];
             bios.CopyTo(memory, 0);
+        }
+
+        public ref ushort GetShortMemoryRef(ushort addr)
+        {
+            return ref Unsafe.As<byte, ushort>(ref GetMemoryRef(addr));
         }
 
         public ref byte GetMemoryRef(ushort addr)
