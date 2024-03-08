@@ -538,8 +538,527 @@ namespace RGBE.Boy
 
         private byte executePrefixed()
         {
-            // TODO implement prefixed instructions
-            return 69;
+            var prefixedOpCode = memoryBank.GetMemoryRef(registers.PC);
+            registers.PC++;
+
+            switch(prefixedOpCode)
+            {
+                default:
+                    throw new NotImplementedException($"Prefixed opcode {prefixedOpCode:X2} not implemented.");
+                case 0x00: // RLC B
+                    return RLC(ref registers.B);
+                case 0x01: // RLC C
+                    return RLC(ref registers.C);
+                case 0x02: // RLC D
+                    return RLC(ref registers.D);
+                case 0x03: // RLC E
+                    return RLC(ref registers.E);
+                case 0x04: // RLC H
+                    return RLC(ref registers.H);
+                case 0x05: // RLC L
+                    return RLC(ref registers.L);
+                case 0x06: // RLC (HL)
+                    return RLC(ref memoryBank.GetMemoryRef(registers.HL));
+                case 0x07: // RLC A
+                    return RLC(ref registers.A);
+                case 0x08: // RRC B
+                    return RRC(ref registers.B);
+                case 0x09: // RRC C
+                    return RRC(ref registers.C);
+                case 0x0A: // RRC D
+                    return RRC(ref registers.D);
+                case 0x0B: // RRC E
+                    return RRC(ref registers.E);
+                case 0x0C: // RRC H
+                    return RRC(ref registers.H);
+                case 0x0D: // RRC L
+                    return RRC(ref registers.L);
+                case 0x0E: // RRC (HL)
+                    return RRC(ref memoryBank.GetMemoryRef(registers.HL));
+                case 0x0F: // RRC A
+                    return RRC(ref registers.A);
+                case 0x10: // RL B
+                    return RL(ref registers.B);
+                case 0x11: // RL C
+                    return RL(ref registers.C);
+                case 0x12: // RL D
+                    return RL(ref registers.D);
+                case 0x13: // RL E
+                    return RL(ref registers.E);
+                case 0x14: // RL H
+                    return RL(ref registers.H);
+                case 0x15: // RL L
+                    return RL(ref registers.L);
+                case 0x16: // RL (HL)
+                    return RL(ref memoryBank.GetMemoryRef(registers.HL));
+                case 0x17: // RL A
+                    return RL(ref registers.A);
+                case 0x18: // RR B
+                    return RR(ref registers.B);
+                case 0x19: // RR C
+                    return RR(ref registers.C);
+                case 0x1A: // RR D
+                    return RR(ref registers.D);
+                case 0x1B: // RR E  
+                    return RR(ref registers.E);
+                case 0x1C: // RR H
+                    return RR(ref registers.H);
+                case 0x1D: // RR L
+                    return RR(ref registers.L);
+                case 0x1E: // RR (HL)
+                    return RR(ref memoryBank.GetMemoryRef(registers.HL));
+                case 0x1F: // RR A
+                    return RR(ref registers.A);
+                case 0x20: // SLA B
+                    return SLA(ref registers.B);
+                case 0x21: // SLA C
+                    return SLA(ref registers.C);
+                case 0x22: // SLA D
+                    return SLA(ref registers.D);
+                case 0x23: // SLA E
+                    return SLA(ref registers.E);
+                case 0x24: // SLA H
+                    return SLA(ref registers.H);
+                case 0x25: // SLA L
+                    return SLA(ref registers.L);
+                case 0x26: // SLA (HL)
+                    return SLA(ref memoryBank.GetMemoryRef(registers.HL));
+                case 0x27: // SLA A
+                    return SLA(ref registers.A);
+                case 0x28: // SRA B
+                    return SRA(ref registers.B);
+                case 0x29: // SRA C
+                    return SRA(ref registers.C);
+                case 0x2A: // SRA D
+                    return SRA(ref registers.D);
+                case 0x2B: // SRA E
+                    return SRA(ref registers.E);
+                case 0x2C: // SRA H
+                    return SRA(ref registers.H);
+                case 0x2D: // SRA L
+                    return SRA(ref registers.L);
+                case 0x2E: // SRA (HL)
+                    return SRA(ref memoryBank.GetMemoryRef(registers.HL));
+                case 0x2F: // SRA A
+                    return SRA(ref registers.A);
+                case 0x30: // SWAP B
+                    return SWAP(ref registers.B);
+                case 0x31: // SWAP C
+                    return SWAP(ref registers.C);
+                case 0x32: // SWAP D
+                    return SWAP(ref registers.D);
+                case 0x33: // SWAP E
+                    return SWAP(ref registers.E);
+                case 0x34: // SWAP H
+                    return SWAP(ref registers.H);
+                case 0x35: // SWAP L
+                    return SWAP(ref registers.L);
+                case 0x36: // SWAP (HL)
+                    return SWAP(ref memoryBank.GetMemoryRef(registers.HL));
+                case 0x37: // SWAP A
+                    return SWAP(ref registers.A);
+                case 0x38: // SRL B
+                    return SRL(ref registers.B);
+                case 0x39: // SRL C
+                    return SRL(ref registers.C);
+                case 0x3A: // SRL D
+                    return SRL(ref registers.D);
+                case 0x3B: // SRL E
+                    return SRL(ref registers.E);
+                case 0x3C: // SRL H
+                    return SRL(ref registers.H);
+                case 0x3D: // SRL L
+                    return SRL(ref registers.L);
+                case 0x3E: // SRL (HL)
+                    return SRL(ref memoryBank.GetMemoryRef(registers.HL));
+                case 0x3F: // SRL A
+                    return SRL(ref registers.A);
+                case 0x40: // BIT 0, B
+                    return BIT(0, ref registers.B);
+                case 0x41: // BIT 0, C
+                    return BIT(0, ref registers.C);
+                case 0x42: // BIT 0, D
+                    return BIT(0, ref registers.D);
+                case 0x43: // BIT 0, E
+                    return BIT(0, ref registers.E);
+                case 0x44: // BIT 0, H
+                    return BIT(0, ref registers.H);
+                case 0x45: // BIT 0, L
+                    return BIT(0, ref registers.L);
+                case 0x46: // BIT 0, (HL)
+                    return BIT(0, ref memoryBank.GetMemoryRef(registers.HL));
+                case 0x47: // BIT 0, A
+                    return BIT(0, ref registers.A);
+                case 0x48: // BIT 1, B
+                    return BIT(1, ref registers.B);
+                case 0x49: // BIT 1, C
+                    return BIT(1, ref registers.C);
+                case 0x4A: // BIT 1, D
+                    return BIT(1, ref registers.D);
+                case 0x4B: // BIT 1, E
+                    return BIT(1, ref registers.E);
+                case 0x4C: // BIT 1, H
+                    return BIT(1, ref registers.H);
+                case 0x4D: // BIT 1, L
+                    return BIT(1, ref registers.L);
+                case 0x4E: // BIT 1, (HL)
+                    return BIT(1, ref memoryBank.GetMemoryRef(registers.HL));
+                case 0x4F: // BIT 1, A
+                    return BIT(1, ref registers.A);
+                case 0x50: // BIT 2, B
+                    return BIT(2, ref registers.B);
+                case 0x51: // BIT 2, C
+                    return BIT(2, ref registers.C);
+                case 0x52: // BIT 2, D
+                    return BIT(2, ref registers.D);
+                case 0x53: // BIT 2, E
+                    return BIT(2, ref registers.E);
+                case 0x54: // BIT 2, H
+                    return BIT(2, ref registers.H);
+                case 0x55: // BIT 2, L
+                    return BIT(2, ref registers.L);
+                case 0x56: // BIT 2, (HL)
+                    return BIT(2, ref memoryBank.GetMemoryRef(registers.HL));
+                case 0x57: // BIT 2, A
+                    return BIT(2, ref registers.A);
+                case 0x58: // BIT 3, B
+                    return BIT(3, ref registers.B);
+                case 0x59: // BIT 3, C
+                    return BIT(3, ref registers.C);
+                case 0x5A: // BIT 3, D
+                    return BIT(3, ref registers.D);
+                case 0x5B: // BIT 3, E
+                    return BIT(3, ref registers.E);
+                case 0x5C: // BIT 3, H
+                    return BIT(3, ref registers.H);
+                case 0x5D: // BIT 3, L
+                    return BIT(3, ref registers.L);
+                case 0x5E: // BIT 3, (HL)
+                    return BIT(3, ref memoryBank.GetMemoryRef(registers.HL));
+                case 0x5F: // BIT 3, A
+                    return BIT(3, ref registers.A);
+                case 0x60: // BIT 4, B
+                    return BIT(4, ref registers.B);
+                case 0x61: // BIT 4, C
+                    return BIT(4, ref registers.C);
+                case 0x62: // BIT 4, D
+                    return BIT(4, ref registers.D);
+                case 0x63: // BIT 4, E
+                    return BIT(4, ref registers.E);
+                case 0x64: // BIT 4, H
+                    return BIT(4, ref registers.H);
+                case 0x65: // BIT 4, L
+                    return BIT(4, ref registers.L);
+                case 0x66: // BIT 4, (HL)
+                    return BIT(4, ref memoryBank.GetMemoryRef(registers.HL));
+                case 0x67: // BIT 4, A
+                    return BIT(4, ref registers.A);
+                case 0x68: // BIT 5, B
+                    return BIT(5, ref registers.B);
+                case 0x69: // BIT 5, C
+                    return BIT(5, ref registers.C);
+                case 0x6A: // BIT 5, D
+                    return BIT(5, ref registers.D);
+                case 0x6B: // BIT 5, E
+                    return BIT(5, ref registers.E);
+                case 0x6C: // BIT 5, H
+                    return BIT(5, ref registers.H);
+                case 0x6D: // BIT 5, L
+                    return BIT(5, ref registers.L);
+                case 0x6E: // BIT 5, (HL)
+                    return BIT(5, ref memoryBank.GetMemoryRef(registers.HL));
+                case 0x6F: // BIT 5, A
+                    return BIT(5, ref registers.A);
+                case 0x70: // BIT 6, B
+                    return BIT(6, ref registers.B);
+                case 0x71: // BIT 6, C
+                    return BIT(6, ref registers.C);
+                case 0x72: // BIT 6, D
+                    return BIT(6, ref registers.D);
+                case 0x73: // BIT 6, E
+                    return BIT(6, ref registers.E);
+                case 0x74: // BIT 6, H
+                    return BIT(6, ref registers.H);
+                case 0x75: // BIT 6, L
+                    return BIT(6, ref registers.L);
+                case 0x76: // BIT 6, (HL)
+                    return BIT(6, ref memoryBank.GetMemoryRef(registers.HL));
+                case 0x77: // BIT 6, A
+                    return BIT(6, ref registers.A);
+                case 0x78: // BIT 7, B
+                    return BIT(7, ref registers.B);
+                case 0x79: // BIT 7, C
+                    return BIT(7, ref registers.C);
+                case 0x7A: // BIT 7, D
+                    return BIT(7, ref registers.D);
+                case 0x7B: // BIT 7, E
+                    return BIT(7, ref registers.E);
+                case 0x7C: // BIT 7, H
+                    return BIT(7, ref registers.H);
+                case 0x7D: // BIT 7, L
+                    return BIT(7, ref registers.L);
+                case 0x7E: // BIT 7, (HL)
+                    return BIT(7, ref memoryBank.GetMemoryRef(registers.HL));
+                case 0x7F: // BIT 7, A
+                    return BIT(7, ref registers.A);
+                case 0x80: // RES 0, B
+                    return RES(0, ref registers.B);
+                case 0x81: // RES 0, C
+                    return RES(0, ref registers.C);
+                case 0x82: // RES 0, D
+                    return RES(0, ref registers.D);
+                case 0x83: // RES 0, E
+                    return RES(0, ref registers.E);
+                case 0x84: // RES 0, H
+                    return RES(0, ref registers.H);
+                case 0x85: // RES 0, L
+                    return RES(0, ref registers.L);
+                case 0x86: // RES 0, (HL)
+                    return RES(0, ref memoryBank.GetMemoryRef(registers.HL));
+                case 0x87: // RES 0, A
+                    return RES(0, ref registers.A);
+                case 0x88: // RES 1, B
+                    return RES(1, ref registers.B);
+                case 0x89: // RES 1, C
+                    return RES(1, ref registers.C);
+                case 0x8A: // RES 1, D
+                    return RES(1, ref registers.D);
+                case 0x8B: // RES 1, E
+                    return RES(1, ref registers.E);
+                case 0x8C: // RES 1, H
+                    return RES(1, ref registers.H);
+                case 0x8D: // RES 1, L
+                    return RES(1, ref registers.L);
+                case 0x8E: // RES 1, (HL)
+                    return RES(1, ref memoryBank.GetMemoryRef(registers.HL));
+                case 0x8F: // RES 1, A
+                    return RES(1, ref registers.A);
+                case 0x90: // RES 2, B
+                    return RES(2, ref registers.B);
+                case 0x91: // RES 2, C
+                    return RES(2, ref registers.C);
+                case 0x92: // RES 2, D
+                    return RES(2, ref registers.D);
+                case 0x93: // RES 2, E
+                    return RES(2, ref registers.E);
+                case 0x94: // RES 2, H
+                    return RES(2, ref registers.H);
+                case 0x95: // RES 2, L
+                    return RES(2, ref registers.L);
+                case 0x96: // RES 2, (HL)
+                    return RES(2, ref memoryBank.GetMemoryRef(registers.HL));
+                case 0x97: // RES 2, A
+                    return RES(2, ref registers.A);
+                case 0x98: // RES 3, B
+                    return RES(3, ref registers.B);
+                case 0x99: // RES 3, C
+                    return RES(3, ref registers.C);
+                case 0x9A: // RES 3, D
+                    return RES(3, ref registers.D);
+                case 0x9B: // RES 3, E
+                    return RES(3, ref registers.E);
+                case 0x9C: // RES 3, H
+                    return RES(3, ref registers.H);
+                case 0x9D: // RES 3, L
+                    return RES(3, ref registers.L);
+                case 0x9E: // RES 3, (HL)
+                    return RES(3, ref memoryBank.GetMemoryRef(registers.HL));
+                case 0x9F: // RES 3, A
+                    return RES(3, ref registers.A);
+                case 0xA0: // RES 4, B
+                    return RES(4, ref registers.B);
+                case 0xA1: // RES 4, C
+                    return RES(4, ref registers.C);
+                case 0xA2: // RES 4, D
+                    return RES(4, ref registers.D);
+                case 0xA3: // RES 4, E
+                    return RES(4, ref registers.E);
+                case 0xA4: // RES 4, H
+                    return RES(4, ref registers.H);
+                case 0xA5: // RES 4, L
+                    return RES(4, ref registers.L);
+                case 0xA6: // RES 4, (HL)
+                    return RES(4, ref memoryBank.GetMemoryRef(registers.HL));
+                case 0xA7: // RES 4, A
+                    return RES(4, ref registers.A);
+                case 0xA8: // RES 5, B
+                    return RES(5, ref registers.B);
+                case 0xA9: // RES 5, C
+                    return RES(5, ref registers.C);
+                case 0xAA: // RES 5, D
+                    return RES(5, ref registers.D);
+                case 0xAB: // RES 5, E
+                    return RES(5, ref registers.E);
+                case 0xAC: // RES 5, H
+                    return RES(5, ref registers.H);
+                case 0xAD: // RES 5, L
+                    return RES(5, ref registers.L);
+                case 0xAE: // RES 5, (HL)
+                    return RES(5, ref memoryBank.GetMemoryRef(registers.HL));
+                case 0xAF: // RES 5, A
+                    return RES(5, ref registers.A);
+                case 0xB0: // RES 6, B
+                    return RES(6, ref registers.B);
+                case 0xB1: // RES 6, C
+                    return RES(6, ref registers.C);
+                case 0xB2: // RES 6, D
+                    return RES(6, ref registers.D);
+                case 0xB3: // RES 6, E
+                    return RES(6, ref registers.E);
+                case 0xB4: // RES 6, H
+                    return RES(6, ref registers.H);
+                case 0xB5: // RES 6, L
+                    return RES(6, ref registers.L);
+                case 0xB6: // RES 6, (HL)
+                    return RES(6, ref memoryBank.GetMemoryRef(registers.HL));
+                case 0xB7: // RES 6, A
+                    return RES(6, ref registers.A);
+                case 0xB8: // RES 7, B
+                    return RES(7, ref registers.B);
+                case 0xB9: // RES 7, C
+                    return RES(7, ref registers.C);
+                case 0xBA: // RES 7, D
+                    return RES(7, ref registers.D);
+                case 0xBB: // RES 7, E
+                    return RES(7, ref registers.E);
+                case 0xBC: // RES 7, H
+                    return RES(7, ref registers.H);
+                case 0xBD: // RES 7, L
+                    return RES(7, ref registers.L);
+                case 0xBE: // RES 7, (HL)
+                    return RES(7, ref memoryBank.GetMemoryRef(registers.HL));
+                case 0xBF: // RES 7, A
+                    return RES(7, ref registers.A);
+                case 0xC0: // SET 0, B
+                    return SET(0, ref registers.B);
+                case 0xC1: // SET 0, C
+                    return SET(0, ref registers.C);
+                case 0xC2: // SET 0, D
+                    return SET(0, ref registers.D);
+                case 0xC3: // SET 0, E
+                    return SET(0, ref registers.E);
+                case 0xC4: // SET 0, H
+                    return SET(0, ref registers.H);
+                case 0xC5: // SET 0, L
+                    return SET(0, ref registers.L);
+                case 0xC6: // SET 0, (HL)
+                    return SET(0, ref memoryBank.GetMemoryRef(registers.HL));
+                case 0xC7: // SET 0, A
+                    return SET(0, ref registers.A);
+                case 0xC8: // SET 1, B
+                    return SET(1, ref registers.B);
+                case 0xC9: // SET 1, C
+                    return SET(1, ref registers.C);
+                case 0xCA: // SET 1, D
+                    return SET(1, ref registers.D);
+                case 0xCB: // SET 1, E
+                    return SET(1, ref registers.E);
+                case 0xCC: // SET 1, H
+                    return SET(1, ref registers.H);
+                case 0xCD: // SET 1, L
+                    return SET(1, ref registers.L);
+                case 0xCE: // SET 1, (HL)
+                    return SET(1, ref memoryBank.GetMemoryRef(registers.HL));
+                case 0xCF: // SET 1, A
+                    return SET(1, ref registers.A);
+                case 0xD0: // SET 2, B
+                    return SET(2, ref registers.B);
+                case 0xD1: // SET 2, C
+                    return SET(2, ref registers.C);
+                case 0xD2: // SET 2, D
+                    return SET(2, ref registers.D);
+                case 0xD3: // SET 2, E
+                    return SET(2, ref registers.E);
+                case 0xD4: // SET 2, H
+                    return SET(2, ref registers.H);
+                case 0xD5: // SET 2, L
+                    return SET(2, ref registers.L);
+                case 0xD6: // SET 2, (HL)
+                    return SET(2, ref memoryBank.GetMemoryRef(registers.HL));
+                case 0xD7: // SET 2, A
+                    return SET(2, ref registers.A);
+                case 0xD8: // SET 3, B
+                    return SET(3, ref registers.B);
+                case 0xD9: // SET 3, C
+                    return SET(3, ref registers.C);
+                case 0xDA: // SET 3, D
+                    return SET(3, ref registers.D);
+                case 0xDB: // SET 3, E
+                    return SET(3, ref registers.E);
+                case 0xDC: // SET 3, H
+                    return SET(3, ref registers.H);
+                case 0xDD: // SET 3, L
+                    return SET(3, ref registers.L);
+                case 0xDE: // SET 3, (HL)
+                    return SET(3, ref memoryBank.GetMemoryRef(registers.HL));
+                case 0xDF: // SET 3, A
+                    return SET(3, ref registers.A);
+                case 0xE0: // SET 4, B
+                    return SET(4, ref registers.B);
+                case 0xE1: // SET 4, C
+                    return SET(4, ref registers.C);
+                case 0xE2: // SET 4, D
+                    return SET(4, ref registers.D);
+                case 0xE3: // SET 4, E
+                    return SET(4, ref registers.E);
+                case 0xE4: // SET 4, H
+                    return SET(4, ref registers.H);
+                case 0xE5: // SET 4, L
+                    return SET(4, ref registers.L);
+                case 0xE6: // SET 4, (HL)
+                    return SET(4, ref memoryBank.GetMemoryRef(registers.HL));
+                case 0xE7: // SET 4, A
+                    return SET(4, ref registers.A);
+                case 0xE8: // SET 5, B
+                    return SET(5, ref registers.B);
+                case 0xE9: // SET 5, C
+                    return SET(5, ref registers.C);
+                case 0xEA: // SET 5, D
+                    return SET(5, ref registers.D);
+                case 0xEB: // SET 5, E
+                    return SET(5, ref registers.E);
+                case 0xEC: // SET 5, H
+                    return SET(5, ref registers.H);
+                case 0xED: // SET 5, L
+                    return SET(5, ref registers.L);
+                case 0xEE: // SET 5, (HL)
+                    return SET(5, ref memoryBank.GetMemoryRef(registers.HL));
+                case 0xEF: // SET 5, A
+                    return SET(5, ref registers.A);
+                case 0xF0: // SET 6, B
+                    return SET(6, ref registers.B);
+                case 0xF1: // SET 6, C
+                    return SET(6, ref registers.C);
+                case 0xF2: // SET 6, D
+                    return SET(6, ref registers.D);
+                case 0xF3: // SET 6, E
+                    return SET(6, ref registers.E);
+                case 0xF4: // SET 6, H
+                    return SET(6, ref registers.H);
+                case 0xF5: // SET 6, L
+                    return SET(6, ref registers.L);
+                case 0xF6: // SET 6, (HL)
+                    return SET(6, ref memoryBank.GetMemoryRef(registers.HL));
+                case 0xF7: // SET 6, A
+                    return SET(6, ref registers.A);
+                case 0xF8: // SET 7, B
+                    return SET(7, ref registers.B);
+                case 0xF9: // SET 7, C
+                    return SET(7, ref registers.C);
+                case 0xFA: // SET 7, D
+                    return SET(7, ref registers.D);
+                case 0xFB: // SET 7, E
+                    return SET(7, ref registers.E);
+                case 0xFC: // SET 7, H
+                    return SET(7, ref registers.H);
+                case 0xFD: // SET 7, L
+                    return SET(7, ref registers.L);
+                case 0xFE: // SET 7, (HL)
+                    return SET(7, ref memoryBank.GetMemoryRef(registers.HL));
+                case 0xFF: // SET 7, A
+                    return SET(7, ref registers.A);
+                
+            }
         }
 
         /// <summary>
@@ -1041,6 +1560,125 @@ namespace RGBE.Boy
                 return 24;
             }
             return 12;
+        }
+
+        private byte SLA(ref byte value)
+        {
+            var carry = (value & 0x80) != 0;
+            value = (byte)(value << 1);
+            if (carry)
+            {
+                registers.F |= FlagRegister.Carry;
+            }
+            else
+            {
+                registers.F &= ~FlagRegister.Carry;
+            }
+            if (value == 0)
+            {
+                registers.F |= FlagRegister.Zero;
+            }
+            else
+            {
+                registers.F &= ~FlagRegister.Zero;
+            }
+            registers.F &= ~FlagRegister.Subtract;
+            registers.F &= ~FlagRegister.HalfCarry;
+            return 8;
+        }
+
+        private byte SRA(ref byte value)
+        {
+            var carry = (value & 0x01) != 0;
+            value = (byte)((value >> 1) | (value & 0x80));
+            if (carry)
+            {
+                registers.F |= FlagRegister.Carry;
+            }
+            else
+            {
+                registers.F &= ~FlagRegister.Carry;
+            }
+            if (value == 0)
+            {
+                registers.F |= FlagRegister.Zero;
+            }
+            else
+            {
+                registers.F &= ~FlagRegister.Zero;
+            }
+            registers.F &= ~FlagRegister.Subtract;
+            registers.F &= ~FlagRegister.HalfCarry;
+            return 8;
+        }
+
+        private byte SWAP(ref byte value)
+        {
+            value = (byte)((value << 4) | (value >> 4));
+            if (value == 0)
+            {
+                registers.F |= FlagRegister.Zero;
+            }
+            else
+            {
+                registers.F &= ~FlagRegister.Zero;
+            }
+            registers.F &= ~FlagRegister.Subtract;
+            registers.F &= ~FlagRegister.HalfCarry;
+            registers.F &= ~FlagRegister.Carry;
+            return 8;
+        }
+
+        private byte SRL(ref byte value)
+        {
+            var carry = (value & 0x01) != 0;
+            value = (byte)(value >> 1);
+            if (carry)
+            {
+                registers.F |= FlagRegister.Carry;
+            }
+            else
+            {
+                registers.F &= ~FlagRegister.Carry;
+            }
+            if (value == 0)
+            {
+                registers.F |= FlagRegister.Zero;
+            }
+            else
+            {
+                registers.F &= ~FlagRegister.Zero;
+            }
+            registers.F &= ~FlagRegister.Subtract;
+            registers.F &= ~FlagRegister.HalfCarry;
+            return 8;
+        }
+
+        private byte BIT(byte bit, ref byte value)
+        {
+            if ((value & (1 << bit)) == 0)
+            {
+                registers.F |= FlagRegister.Zero;
+            }
+            else
+            {
+                registers.F &= ~FlagRegister.Zero;
+            }
+            registers.F &= ~FlagRegister.Subtract;
+            registers.F |= FlagRegister.HalfCarry;
+            return 8;
+        }
+
+        private byte RES(byte bit, ref byte value)
+        {
+            value &= (byte)~(1 << bit);
+            return 8;
+        }
+
+        private byte SET(byte bit, ref byte value)
+        {
+            value |= (byte)(1 << bit);
+            return 8;
         }
     }
 }
