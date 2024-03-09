@@ -16,9 +16,12 @@ namespace RGBE.Boy
         public TimeSpan Tick()
         {
             stopwatch.Restart();
+            Console.Write("OpCode: ");
             var tStates = executeNextInstruction();
+            Console.WriteLine(" executed");
             stopwatch.Stop();
-            return TimeSpan.FromTicks((TICKS_PER_TSTATE * tStates) - stopwatch.ElapsedTicks);
+            var ticks = (TICKS_PER_TSTATE * tStates) - stopwatch.ElapsedTicks;
+            return TimeSpan.FromTicks(ticks > 0? ticks : 0);
         }
 
         /// <summary>
@@ -30,6 +33,8 @@ namespace RGBE.Boy
         {
             var opCode = memoryBank.GetMemoryRef(registers.PC);
             registers.PC++;
+
+            Console.Write($"0x{opCode:X2}");
 
             switch(opCode)
             {
@@ -513,6 +518,7 @@ namespace RGBE.Boy
                     return LD_8bit(ref registers.A, ref memoryBank.GetMemoryRef((ushort)(0xFF00 + registers.C)));
                 case 0xF3: // DI
                     //return DI();
+                    return 4;
                     throw new NotImplementedException("DI not implemented.");
                 case 0xF5: // PUSH AF
                     return PUSH(ref registers.AF);
@@ -528,6 +534,7 @@ namespace RGBE.Boy
                     return LD_8bit(ref registers.A, ref memoryBank.GetMemoryRef(registers.PC));
                 case 0xFB: // EI
                     //return EI();
+                    return 4;
                     throw new NotImplementedException("EI not implemented.");
                 case 0xFE: // CP A, n
                     return CP(ref registers.A, ref memoryBank.GetMemoryRef(registers.PC));
@@ -541,6 +548,7 @@ namespace RGBE.Boy
             var prefixedOpCode = memoryBank.GetMemoryRef(registers.PC);
             registers.PC++;
 
+            Console.Write(prefixedOpCode.ToString("X"));
             switch(prefixedOpCode)
             {
                 default:
