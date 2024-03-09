@@ -121,7 +121,7 @@ namespace RGBE.Boy
                 case 0x26: // LD H, n
                     return LD_8bit(ref registers.H, ref memoryBank.GetMemoryRef(registers.PC));
                 case 0x27: // DAA
-                    return DAA(ref registers.A);
+                    return DAA();
                 case 0x28: // JR Z, n
                     return JRZ(ref memoryBank.GetMemoryRef(registers.PC));
                 case 0x29: // ADD HL, HL
@@ -1074,28 +1074,35 @@ namespace RGBE.Boy
         /// </summary>
         /// <param name="output">Location to load 16 bit value from</param>
         /// <param name="input">Location to pass it to</param>
-        /// <returns>Amount of T-states taken for this action</returns>
+        /// <returns>12 T-states</returns>
         private byte LD_16bit(ref byte output, ref byte input)
         {
             Unsafe.CopyBlockUnaligned(ref output, ref input, 2);
             registers.PC += 2;
-
+            // no flags affected
             return 12;
         }
 
         /// <summary>
         /// Loads an 8 bit value from one location to another
         /// </summary>
-        /// <param name="output">Location to load 8 bit value from</param>
-        /// <param name="input">Location to pass it to</param>
-        /// <returns>Amount of T-states taken for this action</returns>
+        /// <param name="output">Location to load 8 bit value to</param>
+        /// <param name="input">Location to load 8 bit value from</param>
+        /// <returns>4 T-states</returns>
         private byte LD_8bit(ref byte output, ref byte input)
         {
             output = input;
             registers.PC++;
-            return 8;
+            // no flags affected
+            return 4;
         }
 
+        /// <summary>
+        /// Loads an 8 but value from one location to another, and increments the origin value by 1.
+        /// </summary>
+        /// <param name="output">Location to load value to</param>
+        /// <param name="input">Location to load value from, gets incremented by 1.</param>
+        /// <returns>8 T-states</returns>
         private byte LDi_8bit(ref byte output, ref byte input)
         {
             output = input;
@@ -1104,6 +1111,12 @@ namespace RGBE.Boy
             return 8;
         }
 
+        /// <summary>
+        /// Loads an 8 bit value from one location to another, and decrements the origin value by 1.
+        /// </summary>
+        /// <param name="output">Location to load value to</param>
+        /// <param name="input">Location to load value from, gets decremented by 1.</param>
+        /// <returns>8 T-states</returns>
         private byte LDd_8bit(ref byte output, ref byte input)
         {
             output = input;
@@ -1112,66 +1125,209 @@ namespace RGBE.Boy
             return 8;
         }
 
+        /// <summary>
+        /// Increases a 16 bit value by 1.
+        /// </summary>
+        /// <param name="value">Value to increment</param>
+        /// <returns>8 T-states</returns>
         private byte INC_16bit(ref ushort value)
         {
             value++;
             registers.PC++;
+
+            // disable subtract flag
+            registers.F &= ~FlagRegister.Subtract;
+            if(value == 0)
+                registers.F |= FlagRegister.Zero;
+            // set H if overflow from bit 3
+            if((value & 0x0F) == 0)
+                registers.F |= FlagRegister.HalfCarry;
+
             return 8;
         }
 
+        /// <summary>
+        /// Increases an 8 bit value by 1.
+        /// </summary>
+        /// <param name="value">Points to value to increase</param>
+        /// <returns>8 T-states</returns>
         private byte INC_8bit(ref byte value)
         {
             value++;
             registers.PC++;
+
+            // set flags
+            registers.F &= ~FlagRegister.Subtract;
+            if(value == 0)
+                registers.F |= FlagRegister.Zero;
+            if((value & 0x0F) == 0)
+                registers.F |= FlagRegister.HalfCarry;
+
             return 8;
         }
 
+        /// <summary>
+        /// Decreases an 8 bit value by 1.
+        /// </summary>
+        /// <param name="value">Points to value to decrease</param>
+        /// <returns>8 T-states</returns>
         private byte DEC_8bit(ref byte value)
         {
             value--;
             registers.PC++;
+
+            // flags
+            registers.F |= FlagRegister.Subtract;
+            if(value == 0)
+                registers.F |= FlagRegister.Zero;
+            // set half carry if borrow from bit 4
+            if((value & 0x0F) == 0x0F)
+                registers.F |= FlagRegister.HalfCarry;
+
             return 8;
         }
 
+        /// <summary>
+        /// Rotate Left with Carry
+        /// </summary>
+        /// <param name="value">Points to value to operate on.</param>
+        /// <returns>4 T-states</returns>
         private byte RLC(ref byte value)
         {
             var carry = (value & 0x80) != 0;
             value = (byte)((value << 1) | (carry ? 1 : 0));
+
+            // zet zero if result is 0
+            registers.F = (value == 0) ? (registers.F | FlagRegister.Zero) : (registers.F & ~FlagRegister.Zero);
+
+            // set carry if bit 7 was set
+            registers.F = (registers.F & ~FlagRegister.Carry) | (carry ? FlagRegister.Carry : 0);
+            //disable N and H
+            registers.F &= ~(FlagRegister.Subtract | FlagRegister.HalfCarry);
+
             return 4;
         }
 
+        /// <summary>
+        /// Adds a 16 bit value onto another
+        /// </summary>
+        /// <param name="output">Value to add to</param>
+        /// <param name="input">Value to take from</param>
+        /// <returns>8 T-states</returns>
         private byte ADD_16bit(ref ushort output, ref ushort input)
         {
             output += input;
+
+            // disable subtract flag
+            registers.F &= ~FlagRegister.Subtract;
+            // set H if overflow from bit 3
+            if((output & 0x0F) < (input & 0x0F))
+                registers.F |= FlagRegister.HalfCarry;
+            else
+                registers.F &= ~FlagRegister.HalfCarry;
+            // set C if overflow from bit 7
+            registers.F = (output < input) ? (registers.F | FlagRegister.Carry) : (registers.F & ~FlagRegister.Carry);
+
+            // zero flag if zero
+            if(output == 0)
+                registers.F |= FlagRegister.Zero;
+            else
+                registers.F &= ~FlagRegister.Zero;
+
             return 8;
         }
 
+        /// <summary>
+        /// Adds an 8 bit value onto another
+        /// </summary>
+        /// <param name="output">Value to add to</param>
+        /// <param name="input">Value to take from</param>
+        /// <returns>4 T-states</returns>
         private byte ADD_8bit(ref byte output, ref byte input)
         {
             output += input;
+
+            // disable subtract flag
+            registers.F &= ~FlagRegister.Subtract;
+            // set H if overflow from bit 3
+            if((output & 0x0F) < (input & 0x0F))
+                registers.F |= FlagRegister.HalfCarry;
+            else
+                registers.F &= ~FlagRegister.HalfCarry;
+            // set C if overflow from bit 7
+            registers.F = (output < input) ? (registers.F | FlagRegister.Carry) : (registers.F & ~FlagRegister.Carry);
+            // set zero flag to correct value
+            registers.F = (output == 0) ? (registers.F | FlagRegister.Zero) : (registers.F & ~FlagRegister.Zero);
+
             return 4;
         }
 
+        /// <summary>
+        /// Decreases a 16-bit value by 1
+        /// </summary>
+        /// <param name="value">Points to value to decrease</param>
+        /// <returns>8 T-states</returns>
         private byte DEC_16bit(ref ushort value)
         {
             value--;
+            registers.PC+=2;
+
+            // set zero flag 1liner
+            registers.F = (value == 0) ? (registers.F | FlagRegister.Zero) : (registers.F & ~FlagRegister.Zero);
+            // set N flag
+            registers.F |= FlagRegister.Subtract;
+            // set H flag if borrow from bit 4
+            if((value & 0x0F) == 0x0F)
+                registers.F |= FlagRegister.HalfCarry;
+
             return 8;
         }
 
+        /// <summary>
+        /// Rotate Right with Carry
+        /// </summary>
+        /// <param name="value">Value to operate on.</param>
+        /// <returns>4 T-states</returns>
         private byte RRC(ref byte value)
         {
             var carry = (value & 0x01) != 0;
             value = (byte)((value >> 1) | (carry ? 0x80 : 0));
+
+            // zero flag
+            registers.F = (value == 0) ? (registers.F | FlagRegister.Zero) : (registers.F & ~FlagRegister.Zero);
+            // set carry if bit 0 was set
+            registers.F = (registers.F & ~FlagRegister.Carry) | (carry ? FlagRegister.Carry : 0);
+            //disable N and H
+            registers.F &= ~(FlagRegister.Subtract | FlagRegister.HalfCarry);
+
             return 4;
         }
 
+        /// <summary>
+        /// Rotate Left (without carry)
+        /// </summary>
+        /// <param name="value">Value to operate on.</param>
+        /// <returns>4 T-states</returns>
         private byte RL(ref byte value)
         {
             var carry = (value & 0x80) != 0;
             value = (byte)((value << 1) | (carry ? 1 : 0));
+
+            // zero flag
+            registers.F = (value == 0) ? (registers.F | FlagRegister.Zero) : (registers.F & ~FlagRegister.Zero);
+            // set carry if bit 7 was set
+            registers.F = (registers.F & ~FlagRegister.Carry) | (carry ? FlagRegister.Carry : 0);
+            //disable N and H
+            registers.F &= ~(FlagRegister.Subtract | FlagRegister.HalfCarry);
+
             return 4;
         }
 
+        /// <summary>
+        /// Relative Jump. Adds given offset to the Program Counter as a SIGNED value.
+        /// </summary>
+        /// <param name="offset">Offset to jump</param>
+        /// <returns>12 T-states</returns>
         private byte JR(ref byte offset)
         {
             registers.PC++;
@@ -1179,6 +1335,11 @@ namespace RGBE.Boy
             return 12;
         }
 
+        /// <summary>
+        /// Relative Jump if Zero flag is set. Adds given offset to the Program Counter as a SIGNED value.
+        /// </summary>
+        /// <param name="offset">Offset to jump</param>
+        /// <returns>12 T-states if succeeded, 8 T-states if ignored.</returns>
         private byte JRZ(ref byte offset)
         {
             registers.PC++;
@@ -1190,6 +1351,11 @@ namespace RGBE.Boy
             return 8;
         }
 
+        /// <summary>
+        /// Relative Jump is Zero flag is unset. Adds given offset to the Program Counter as a SIGNED value.
+        /// </summary>
+        /// <param name="offset">Offset to jump</param>
+        /// <returns>12 T-states if succeeded, 8 T-states if ignored.</returns>
         private byte JRNZ(ref byte offset)
         {
             registers.PC++;
@@ -1201,6 +1367,11 @@ namespace RGBE.Boy
             return 8;
         }
 
+        /// <summary>
+        /// Relative Jump is Carry flag is unset. Adds given offset to the Program Counter as a SIGNED value.
+        /// </summary>
+        /// <param name="offset">Offset to jump</param>
+        /// <returns>12 T-states if succeeded, 8 T-states if ignored.</returns>
         private byte JRNC(ref byte offset)
         {
             registers.PC++;
@@ -1212,6 +1383,11 @@ namespace RGBE.Boy
             return 8;
         }
 
+        /// <summary>
+        /// Relative Jump is Carry flag is set. Adds given offset to the Program Counter as a SIGNED value.
+        /// </summary>
+        /// <param name="offset">Offset to jump</param>
+        /// <returns>12 T-states if succeeded, 8 T-states if ignored.</returns>
         private byte JRC(ref byte offset)
         {
             registers.PC++;
@@ -1223,40 +1399,55 @@ namespace RGBE.Boy
             return 8;
         }
 
+        /// <summary>
+        /// Rotate Right (without carry)
+        /// </summary>
+        /// <param name="value">Value to operate on</param>
+        /// <returns>4 T-states</returns>
         private byte RR(ref byte value)
         {
             var carry = (value & 0x01) != 0;
             value = (byte)((value >> 1) | (carry ? 0x80 : 0));
+
+            // zero flag
+            registers.F = (value == 0) ? (registers.F | FlagRegister.Zero) : (registers.F & ~FlagRegister.Zero);
+            // set carry if bit 0 was set
+            registers.F = (registers.F & ~FlagRegister.Carry) | (carry ? FlagRegister.Carry : 0);
+            //disable N and H
+            registers.F &= ~(FlagRegister.Subtract | FlagRegister.HalfCarry);
+
             return 4;
         }
 
-        private byte DAA(ref byte value)
+        /// <summary>
+        /// Adjust A for BCD addition (stupid and dumb and annoying and stuff)
+        /// </summary>
+        /// <returns>4 T-states</returns>
+        private byte DAA()
         {
-            // TODO check if this is correct or not (it's not) 
-            // Adjust A for BCD addition
-            // https://ehaskins.com/2018-01-30%20Z80%20DAA/
-            var carry = (value & 0x10) != 0;
-            var halfCarry = (value & 0x0F) > 9;
-            if (carry || halfCarry)
-            {
-                value += 0x06;
-            }
-            carry = (value & 0x100) != 0;
-            halfCarry = (value & 0x0F) > 9;
-            if (carry || halfCarry)
-            {
-                value += 0x60;
-            }
+            // TODO implement
             return 4;
         }
 
+        /// <summary>
+        /// Compliment on A (flips bits)
+        /// </summary>
+        /// <returns>4 T-states</returns>
         private byte CPL()
         {
             registers.A = (byte)~registers.A;
             registers.F |= FlagRegister.Subtract | FlagRegister.HalfCarry;
+
+            // set N and H to 1
+            registers.F |= FlagRegister.Subtract | FlagRegister.HalfCarry;
+
             return 4;
         }
 
+        /// <summary>
+        /// Enables Carry Flag
+        /// </summary>
+        /// <returns>4 T-states</returns>
         private byte SCF()
         {
             registers.F &= ~FlagRegister.Subtract;
@@ -1265,6 +1456,10 @@ namespace RGBE.Boy
             return 4;
         }
 
+        /// <summary>
+        /// Complements carry flag (flips the bit)
+        /// </summary>
+        /// <returns>4 T-states</returns>
         private byte CCF()
         {
             registers.F &= ~FlagRegister.Subtract;
@@ -1273,133 +1468,183 @@ namespace RGBE.Boy
             return 4;
         }
 
+        /// <summary>
+        /// HALTs CPU for interop. if IME flag is set, this waits for an interrupt. <see href="https://rgbds.gbdev.io/docs/v0.7.0/gbz80.7#HALT"/>
+        /// </summary>
+        /// <returns></returns>
         private byte Halt()
         {
             // TODO implement HALT
-            return 4;
+            return 0;
         }
 
+        /// <summary>
+        /// Adds value PLUS the carry flag to another
+        /// </summary>
+        /// <param name="output">Value to take from.</param>
+        /// <param name="input">Value to add to. Will be 1 higher if Carry is set.</param>
+        /// <returns>4 T-states</returns>
         private byte ADC(ref byte output, ref byte input)
         {
-            // TODO double check this 
-            var carry = registers.F.HasFlag(FlagRegister.Carry) ? 1 : 0;
-            var result = output + input + carry;
-            registers.F = 0;
-            if (result > 0xFF)
-            {
-                registers.F |= FlagRegister.Carry;
-            }
-            if ((output & 0x0F) + (input & 0x0F) + carry > 0x0F)
-            {
+            byte carry = (byte)(registers.F.HasFlag(FlagRegister.Carry) ? 0b1 : 0b0);
+            output += input;
+            output += carry;
+            
+            // zero flag
+            registers.F = (output == 0) ? (registers.F | FlagRegister.Zero) : (registers.F & ~FlagRegister.Zero);
+
+            // set carry if overflow from bit 7
+            registers.F = (output > 0xFF) ? (registers.F | FlagRegister.Carry) : (registers.F & ~FlagRegister.Carry);
+
+            // set H if overflow from bit 3
+            if (((output & 0x0F) + (input & 0x0F) + carry) > 0x0F)
                 registers.F |= FlagRegister.HalfCarry;
-            }
-            if ((output + input + carry) == 0)
-            {
-                registers.F |= FlagRegister.Zero;
-            }
-            output = (byte)result;
+            else
+                registers.F &= ~FlagRegister.HalfCarry;
+
+            // disable N
+            registers.F &= ~FlagRegister.Subtract;
+
             return 4;
         }
 
+        /// <summary>
+        /// Subtracts one value from another
+        /// </summary>
+        /// <param name="output">Value to decrease</param>
+        /// <param name="input">Amount that is decreased</param>
+        /// <returns>4 T-states</returns>
         private byte SUB(ref byte output, ref byte input)
         {
-            // TODO double check
-            var result = output - input;
-            registers.F = FlagRegister.Subtract;
-            if (result == 0)
-            {
-                registers.F |= FlagRegister.Zero;
-            }
-            if (input > output)
-            {
-                registers.F |= FlagRegister.Carry;
-            }
+            output -= input;
+
+            // zero flag
+            registers.F = (output == 0) ? (registers.F | FlagRegister.Zero) : (registers.F & ~FlagRegister.Zero);
+            // set N to 1
+            registers.F |= FlagRegister.Subtract;
+            // set C if input bigger than output
+            registers.F = (input > output) ? (registers.F | FlagRegister.Carry) : (registers.F & ~FlagRegister.Carry);
+            // set H if borrow from bit 4
             if ((input & 0x0F) > (output & 0x0F))
-            {
                 registers.F |= FlagRegister.HalfCarry;
-            }
-            output = (byte)result;
+            else
+                registers.F &= ~FlagRegister.HalfCarry;
+            
             return 4;
         }
 
+        /// <summary>
+        /// Subtract a value from another, with carry flag if set
+        /// </summary>
+        /// <param name="output">Value to subtract from, will decrease 1 more if carry is set</param>
+        /// <param name="input">Amount to subtract</param>
+        /// <returns>4 T-states</returns>
         private byte SBC(ref byte output, ref byte input)
         {
-            // TODO double check
-            var carry = registers.F.HasFlag(FlagRegister.Carry) ? 1 : 0;
-            var result = output - input - carry;
-            registers.F = FlagRegister.Subtract;
-            if (result == 0)
-            {
-                registers.F |= FlagRegister.Zero;
-            }
-            if (input > output)
-            {
-                registers.F |= FlagRegister.Carry;
-            }
-            if ((input & 0x0F) > (output & 0x0F))
-            {
+            var carry = (byte)(registers.F.HasFlag(FlagRegister.Carry) ? 1 : 0);
+            output -= input;
+            output -= carry;
+
+            // zero flag
+            registers.F = (output == 0) ? (registers.F | FlagRegister.Zero) : (registers.F & ~FlagRegister.Zero);
+            // set N to 1
+            registers.F |= FlagRegister.Subtract;
+            // set C if input+carry > output
+            registers.F = (input + carry > output) ? (registers.F | FlagRegister.Carry) : (registers.F & ~FlagRegister.Carry);
+            // set H if borrow from bit 4
+            if ((input & 0x0F) + carry > (output & 0x0F))
                 registers.F |= FlagRegister.HalfCarry;
-            }
-            output = (byte)result;
+            else
+                registers.F &= ~FlagRegister.HalfCarry;
+
             return 4;
         }
 
+        /// <summary>
+        /// Bitwise AND a value
+        /// </summary>
+        /// <param name="output">Value to operate on</param>
+        /// <param name="input">Value to AND</param>
+        /// <returns>4 T-states</returns>
         private byte AND(ref byte output, ref byte input)
         {
-            // TODO check
             output &= input;
-            registers.F = FlagRegister.HalfCarry;
-            if (output == 0)
-            {
-                registers.F |= FlagRegister.Zero;
-            }
+
+            // zero flag
+            registers.F = (output == 0) ? (registers.F | FlagRegister.Zero) : (registers.F & ~FlagRegister.Zero);
+            // disable N and C
+            registers.F &= ~(FlagRegister.Subtract | FlagRegister.Carry);
+            // enable H
+            registers.F |= FlagRegister.HalfCarry;
+
             return 4;
         }
 
+        /// <summary>
+        /// Bitwise XOR
+        /// </summary>
+        /// <param name="output">value to operate on</param>
+        /// <param name="input">Value to XOR</param>
+        /// <returns>4 T-states</returns>
         private byte XOR(ref byte output, ref byte input)
         {
-            // TODO check
             output ^= input;
-            registers.F = 0;
-            if (output == 0)
-            {
-                registers.F |= FlagRegister.Zero;
-            }
+            
+            // zero flag
+            registers.F = (output == 0) ? (registers.F | FlagRegister.Zero) : (registers.F & ~FlagRegister.Zero);
+            // disable N, H, C
+            registers.F &= ~(FlagRegister.Subtract | FlagRegister.HalfCarry | FlagRegister.Carry);
+
             return 4;
         }
 
+        /// <summary>
+        /// Bitwise OR
+        /// </summary>
+        /// <param name="output">Value to operate on</param>
+        /// <param name="input">Value to OR</param>
+        /// <returns>4 T-states</returns>
         private byte OR(ref byte output, ref byte input)
         {
-            // TODO check
             output |= input;
-            registers.F = 0;
-            if (output == 0)
-            {
-                registers.F |= FlagRegister.Zero;
-            }
+
+            // zero flag
+            registers.F = (output == 0) ? (registers.F | FlagRegister.Zero) : (registers.F & ~FlagRegister.Zero);
+            // disable N, H, C
+            registers.F &= ~(FlagRegister.Subtract | FlagRegister.HalfCarry | FlagRegister.Carry);
+
             return 4;
         }
 
+        /// <summary>
+        /// Subtract input from output without storing value. Useful for ComParing
+        /// </summary>
+        /// <param name="output">Value to operate on</param>
+        /// <param name="input">Value to subtract</param>
+        /// <returns>4 T-states</returns>
         private byte CP(ref byte output, ref byte input)
         {
-            // TODO check
             var result = output - input;
-            registers.F = FlagRegister.Subtract;
-            if (result == 0)
-            {
-                registers.F |= FlagRegister.Zero;
-            }
-            if (input > output)
-            {
-                registers.F |= FlagRegister.Carry;
-            }
+
+            // zero flag
+            registers.F = (result == 0) ? (registers.F | FlagRegister.Zero) : (registers.F & ~FlagRegister.Zero);
+            // set N to 1
+            registers.F |= FlagRegister.Subtract;
+            // set C if input bigger than output
+            registers.F = (input > output) ? (registers.F | FlagRegister.Carry) : (registers.F & ~FlagRegister.Carry);
+            // set H if borrow from bit 4
             if ((input & 0x0F) > (output & 0x0F))
-            {
                 registers.F |= FlagRegister.HalfCarry;
-            }
+            else
+                registers.F &= ~FlagRegister.HalfCarry;
+
             return 4;
         }
 
+        /// <summary>
+        /// Returns from subroutine if Zero flag is unset.
+        /// </summary>
+        /// <returns>20 T-states if succeeds, 8 if ignored.</returns>
         private byte RETNZ()
         {
             if (!registers.F.HasFlag(FlagRegister.Zero))
@@ -1411,6 +1656,11 @@ namespace RGBE.Boy
             return 8;
         }
 
+        /// <summary>
+        /// POP a value from the stack
+        /// </summary>
+        /// <param name="value">Reference to value to POP</param>
+        /// <returns>12 T-states</returns>
         private byte POP(ref ushort value)
         {
             value = memoryBank.GetMemoryRef(registers.SP);
@@ -1418,6 +1668,11 @@ namespace RGBE.Boy
             return 12;
         }
 
+        /// <summary>
+        /// Jump to address if Zero flag is unset.
+        /// </summary>
+        /// <param name="offset">Location to jump to</param>
+        /// <returns>16 T-states if passes, 12 if it doesn't pass.</returns>
         private byte JPNZ(ref byte offset)
         {
             if (!registers.F.HasFlag(FlagRegister.Zero))
@@ -1428,6 +1683,11 @@ namespace RGBE.Boy
             return 12;
         }
 
+        /// <summary>
+        /// Jump to address if Zero flag is set.
+        /// </summary>
+        /// <param name="offset">Location to jump to</param>
+        /// <returns>16 T-states if passes, 12 if it doesn't pass.</returns>
         private byte JPZ(ref byte offset)
         {
             if (registers.F.HasFlag(FlagRegister.Zero))
@@ -1438,12 +1698,22 @@ namespace RGBE.Boy
             return 12;
         }
 
+        /// <summary>
+        /// Jump to address
+        /// </summary>
+        /// <param name="offset">Location to jump to</param>
+        /// <returns>16 T-states</returns>
         private byte JP(ref byte offset)
         {
             registers.PC = offset;
             return 16;
         }
 
+        /// <summary>
+        /// Jump to address if Carry flag is unset
+        /// </summary>
+        /// <param name="offset">Location to jump to.</param>
+        /// <returns>16 T-states if passes, 12 if not.</returns>
         private byte JPNC(ref byte offset)
         {
             if (!registers.F.HasFlag(FlagRegister.Carry))
@@ -1453,7 +1723,12 @@ namespace RGBE.Boy
             }
             return 12;
         }
-        
+
+        /// <summary>
+        /// Jump to address if Carry flag is set
+        /// </summary>
+        /// <param name="offset">Location to jump to.</param>
+        /// <returns>16 T-states if passes, 12 if not.</returns>
         private byte JPC(ref byte offset)
         {
             if (registers.F.HasFlag(FlagRegister.Carry))
@@ -1464,6 +1739,11 @@ namespace RGBE.Boy
             return 12;
         }
 
+        /// <summary>
+        /// Call address at <paramref name="offset"/> if Carry flag is unset
+        /// </summary>
+        /// <param name="offset">Offset to call</param>
+        /// <returns>24 T-states if succeeds, 12 if not.</returns>
         private byte CALLNC(ref byte offset)
         {
             if (!registers.F.HasFlag(FlagRegister.Carry))
@@ -1474,6 +1754,11 @@ namespace RGBE.Boy
             return 12;
         }
 
+        /// <summary>
+        /// Call address at <paramref name="offset"/> if Zero flag is unset
+        /// </summary>
+        /// <param name="offset">Offset to call</param>
+        /// <returns>24 T-states if succeeds, 12 if not.</returns>
         private byte CALLNZ(ref byte offset)
         {
             if (!registers.F.HasFlag(FlagRegister.Zero))
@@ -1485,6 +1770,11 @@ namespace RGBE.Boy
             return 12;
         }
 
+        /// <summary>
+        /// Pushes a value to the stack.
+        /// </summary>
+        /// <param name="value">Value to push to stack</param>
+        /// <returns>16 T-states</returns>
         private byte PUSH(ref ushort value)
         {
             registers.SP -= 2;
@@ -1492,12 +1782,21 @@ namespace RGBE.Boy
             return 16;
         }
 
+        /// <summary>
+        /// Call address at offset. Needs further research. Not sure what this does.
+        /// </summary>
+        /// <param name="offset">Offset to call to.</param>
+        /// <returns>16 T-states</returns>
         private byte RST(byte offset)
         {
             // TODO implement
             return 16;
         }
 
+        /// <summary>
+        /// Returns from subroutine if Zero flag is set.
+        /// </summary>
+        /// <returns>20 T-states if passes, 8 if not.</returns>
         private byte RETZ()
         {
             if (registers.F.HasFlag(FlagRegister.Zero))
@@ -1509,6 +1808,10 @@ namespace RGBE.Boy
             return 8;
         }
 
+        /// <summary>
+        /// Returns from subroutine. Imaginary POP PC.
+        /// </summary>
+        /// <returns>16 T-states</returns>
         private byte RET()
         {
             registers.PC = memoryBank.GetMemoryRef(registers.SP);
@@ -1516,6 +1819,10 @@ namespace RGBE.Boy
             return 16;
         }
 
+        /// <summary>
+        /// Returns from subroutine if Carry flag is unset.
+        /// </summary>
+        /// <returns>20 T-states if passes, 8 if not.</returns>
         private byte RETNC()
         {
             if (!registers.F.HasFlag(FlagRegister.Carry))
@@ -1527,12 +1834,20 @@ namespace RGBE.Boy
             return 8;
         }
 
+        /// <summary>
+        /// Returns from subroutine and enables interrupts. IME is set immediately after.
+        /// </summary>
+        /// <returns>16 T-states</returns>
         private byte RETI()
         {
             // TODO implement
             return 16;
         }
 
+        /// <summary>
+        /// Returns from subroutine if Carry flag is set.
+        /// </summary>
+        /// <returns>20 T-states if passes, 8 if not.</returns>
         private byte RETC()
         {
             if (registers.F.HasFlag(FlagRegister.Carry))
@@ -1544,6 +1859,11 @@ namespace RGBE.Boy
             return 8;
         }
 
+        /// <summary>
+        /// Calls address <paramref name="offset"/> if Zero flag is set.
+        /// </summary>
+        /// <param name="offset">Offset to call</param>
+        /// <returns>24 T-states if passes, 12 if not.</returns>
         private byte CALLZ(ref byte offset)
         {
             if (registers.F.HasFlag(FlagRegister.Zero))
@@ -1554,12 +1874,31 @@ namespace RGBE.Boy
             return 12;
         }
 
+        /// <summary>
+        /// Calls address <paramref name="offset"/>
+        /// </summary>
+        /// <param name="offset">Offset to call</param>
+        /// <returns>24 T-states</returns>
         private byte CALL(ref byte offset)
         {
-            // TODO implement
+            // push next address to stack
+            registers.SP -= 2;
+
+            // TODO SLEEP AND RETHINK BITCH https://rgbds.gbdev.io/docs/v0.7.0/gbz80.7#CALL_n16
+            // just so we can fetch the next instruction's address
+            registers.PC+=2;
+            Unsafe.WriteUnaligned(ref memoryBank.GetMemoryRef(registers.SP), registers.PC);
+            // set PC to offset
+            registers.PC = offset;
+
             return 24;
         }
 
+        /// <summary>
+        /// Calls address <paramref name="offset"/> if Carry flag is set.
+        /// </summary>
+        /// <param name="offset">Offset to call</param>
+        /// <returns>24 T-states if passes, 12 if not.</returns>
         private byte CALLC(ref byte offset)
         {
             if (registers.F.HasFlag(FlagRegister.Carry))
@@ -1570,6 +1909,11 @@ namespace RGBE.Boy
             return 12;
         }
 
+        /// <summary>
+        /// Shift Left Arithmetically
+        /// </summary>
+        /// <param name="value">Value to operate on</param>
+        /// <returns>4 T-states</returns>
         private byte SLA(ref byte value)
         {
             var carry = (value & 0x80) != 0;
@@ -1595,6 +1939,11 @@ namespace RGBE.Boy
             return 8;
         }
 
+        /// <summary>
+        /// Shift Right Arithmetically
+        /// </summary>
+        /// <param name="value">Value to operate on</param>
+        /// <returns>4 T-states</returns>
         private byte SRA(ref byte value)
         {
             var carry = (value & 0x01) != 0;
@@ -1620,6 +1969,11 @@ namespace RGBE.Boy
             return 8;
         }
 
+        /// <summary>
+        /// Swaps the lower and upper 4 bits of a value
+        /// </summary>
+        /// <param name="value">Value to operate on</param>
+        /// <returns>4 T-states</returns>
         private byte SWAP(ref byte value)
         {
             value = (byte)((value << 4) | (value >> 4));
@@ -1637,6 +1991,11 @@ namespace RGBE.Boy
             return 8;
         }
 
+        /// <summary>
+        /// Shift Right Logically
+        /// </summary>
+        /// <param name="value">Value to operate on</param>
+        /// <returns>8 T-states</returns>
         private byte SRL(ref byte value)
         {
             var carry = (value & 0x01) != 0;
@@ -1662,6 +2021,12 @@ namespace RGBE.Boy
             return 8;
         }
 
+        /// <summary>
+        /// Tests a specific bit in a value, sets Zero flag if unset.
+        /// </summary>
+        /// <param name="bit">bit to test</param>
+        /// <param name="value">Value to test on</param>
+        /// <returns>8 T-states</returns>
         private byte BIT(byte bit, ref byte value)
         {
             if ((value & (1 << bit)) == 0)
@@ -1677,12 +2042,24 @@ namespace RGBE.Boy
             return 8;
         }
 
+        /// <summary>
+        /// Set a specific bit to 0. In little endian.
+        /// </summary>
+        /// <param name="bit">Bit to operate on (0 is rightmost, 7 is leftmost)</param>
+        /// <param name="value">Value to operate on</param>
+        /// <returns>8 T-states</returns>
         private byte RES(byte bit, ref byte value)
         {
             value &= (byte)~(1 << bit);
             return 8;
         }
 
+        /// <summary>
+        /// Set a specific bit to 1. In little endian.
+        /// </summary>
+        /// <param name="bit">Bit to operate on (0 is rightmost, 7 is leftmost)</param>
+        /// <param name="value">Value to operate on</param>
+        /// <returns>8 T-states</returns>
         private byte SET(byte bit, ref byte value)
         {
             value |= (byte)(1 << bit);
