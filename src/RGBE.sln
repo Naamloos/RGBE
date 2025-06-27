@@ -7,6 +7,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RGBE.Boy", "RGBE.Boy\RGBE.B
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RGBE.ConsoleHost", "RGBE.ConsoleHost\RGBE.ConsoleHost.csproj", "{D4888FC1-19E2-44DA-80EB-630ED218CD14}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RGBE.SilkHost", "RGBE.SilkHost\RGBE.SilkHost.csproj", "{459560F6-D363-4E7D-83C1-87BAC5C0394C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{D4888FC1-19E2-44DA-80EB-630ED218CD14}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D4888FC1-19E2-44DA-80EB-630ED218CD14}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D4888FC1-19E2-44DA-80EB-630ED218CD14}.Release|Any CPU.Build.0 = Release|Any CPU
+                {459560F6-D363-4E7D-83C1-87BAC5C0394C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+                {459560F6-D363-4E7D-83C1-87BAC5C0394C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+                {459560F6-D363-4E7D-83C1-87BAC5C0394C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+                {459560F6-D363-4E7D-83C1-87BAC5C0394C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
