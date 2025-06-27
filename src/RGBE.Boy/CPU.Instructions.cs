@@ -55,9 +55,9 @@ namespace RGBE.Boy
                 case 0x06: // LD B, n
                     return LD_8bit(ref registers.B, ref memoryBank.GetMemoryRef(registers.PC));
                 case 0x07: // RLCA
-                    return RLC(ref registers.A);
+                    return RLCA();
                 case 0x08: // LD (nn), SP
-                    return LD_16bit(ref memoryBank.GetMemoryRef(registers.PC), ref registers.SP_Ref);
+                    return LD_SP_addr();
                 case 0x09: // ADD HL, BC
                     return ADD_16bit(ref registers.HL, ref registers.BC);
                 case 0x0A: // LD A, (BC)
@@ -71,7 +71,7 @@ namespace RGBE.Boy
                 case 0x0E: // LD C, n
                     return LD_8bit(ref registers.C, ref memoryBank.GetMemoryRef(registers.PC));
                 case 0x0F: // RRCA
-                    return RRC(ref registers.C);
+                    return RRCA();
                 case 0x10: // STOP
                     stopRequested = true;
                     registers.PC++;
@@ -1084,6 +1084,17 @@ namespace RGBE.Boy
         }
 
         /// <summary>
+        /// Store SP at the 16-bit address pointed to by the next word.
+        /// </summary>
+        private byte LD_SP_addr()
+        {
+            ushort addr = memoryBank.GetShortMemoryRef(registers.PC);
+            registers.PC += 2;
+            Unsafe.WriteUnaligned(ref memoryBank.GetMemoryRef(addr), registers.SP);
+            return 20;
+        }
+
+        /// <summary>
         /// Loads an 8 bit value from one location to another
         /// </summary>
         /// <param name="output">Location to load 8 bit value to</param>
@@ -1133,16 +1144,6 @@ namespace RGBE.Boy
         private byte INC_16bit(ref ushort value)
         {
             value++;
-            registers.PC++;
-
-            // disable subtract flag
-            registers.F &= ~FlagRegister.Subtract;
-            if(value == 0)
-                registers.F |= FlagRegister.Zero;
-            // set H if overflow from bit 3
-            if((value & 0x0F) == 0)
-                registers.F |= FlagRegister.HalfCarry;
-
             return 8;
         }
 
@@ -1209,6 +1210,21 @@ namespace RGBE.Boy
         }
 
         /// <summary>
+        /// Rotate A left. Zero flag is always reset.
+        /// </summary>
+        private byte RLCA()
+        {
+            var carry = (registers.A & 0x80) != 0;
+            registers.A = (byte)((registers.A << 1) | (carry ? 1 : 0));
+            registers.F &= ~(FlagRegister.Subtract | FlagRegister.HalfCarry | FlagRegister.Zero);
+            if (carry)
+                registers.F |= FlagRegister.Carry;
+            else
+                registers.F &= ~FlagRegister.Carry;
+            return 4;
+        }
+
+        /// <summary>
         /// Adds a 16 bit value onto another
         /// </summary>
         /// <param name="output">Value to add to</param>
@@ -1270,16 +1286,6 @@ namespace RGBE.Boy
         private byte DEC_16bit(ref ushort value)
         {
             value--;
-            registers.PC+=2;
-
-            // set zero flag 1liner
-            registers.F = (value == 0) ? (registers.F | FlagRegister.Zero) : (registers.F & ~FlagRegister.Zero);
-            // set N flag
-            registers.F |= FlagRegister.Subtract;
-            // set H flag if borrow from bit 4
-            if((value & 0x0F) == 0x0F)
-                registers.F |= FlagRegister.HalfCarry;
-
             return 8;
         }
 
@@ -1300,6 +1306,21 @@ namespace RGBE.Boy
             //disable N and H
             registers.F &= ~(FlagRegister.Subtract | FlagRegister.HalfCarry);
 
+            return 4;
+        }
+
+        /// <summary>
+        /// Rotate A right. Zero flag is always reset.
+        /// </summary>
+        private byte RRCA()
+        {
+            var carry = (registers.A & 0x01) != 0;
+            registers.A = (byte)((registers.A >> 1) | (carry ? 0x80 : 0));
+            registers.F &= ~(FlagRegister.Subtract | FlagRegister.HalfCarry | FlagRegister.Zero);
+            if (carry)
+                registers.F |= FlagRegister.Carry;
+            else
+                registers.F &= ~FlagRegister.Carry;
             return 4;
         }
 
