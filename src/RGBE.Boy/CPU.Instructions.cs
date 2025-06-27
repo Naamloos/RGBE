@@ -8,6 +8,7 @@ namespace RGBE.Boy
         // No idea where I got this from? 
         private const int TICKS_PER_TSTATE = 10000000 / 4194304;
         private bool stopRequested = false;
+        private bool halted = false;
 
         /// <summary>
         /// Advances the CPU by one GameBoy tick, returning remaining time for this CPU cycle.
@@ -15,6 +16,11 @@ namespace RGBE.Boy
         /// <returns>Amount of time remaining before the next instruction may execute.</returns>
         public TimeSpan Tick()
         {
+            if (halted || stopRequested)
+            {
+                return TimeSpan.FromTicks(TICKS_PER_TSTATE * 4);
+            }
+
             stopwatch.Restart();
             Console.Write("OpCode: ");
             var tStates = executeNextInstruction();
@@ -431,11 +437,11 @@ namespace RGBE.Boy
                 case 0xC1: // POP BC
                     return POP(ref registers.BC);
                 case 0xC2: // JP NZ, nn
-                    return JPNZ(ref memoryBank.GetMemoryRef(registers.PC));
+                    return JPNZ(ref memoryBank.GetShortMemoryRef(registers.PC));
                 case 0xC3: // JP nn
-                    return JP(ref memoryBank.GetMemoryRef(registers.PC));
+                    return JP(ref memoryBank.GetShortMemoryRef(registers.PC));
                 case 0xC4: // CALL NZ, nn
-                    return CALLNZ(ref memoryBank.GetMemoryRef(registers.PC));
+                    return CALLNZ(ref memoryBank.GetShortMemoryRef(registers.PC));
                 case 0xC5: // PUSH BC
                     return PUSH(ref registers.BC);
                 case 0xC6: // ADD A, n
@@ -447,13 +453,13 @@ namespace RGBE.Boy
                 case 0xC9: // RET
                     return RET();
                 case 0xCA: // JP Z, nn
-                    return JPZ(ref memoryBank.GetMemoryRef(registers.PC));
+                    return JPZ(ref memoryBank.GetShortMemoryRef(registers.PC));
                 case 0xCB: // PREFIX CB
                     return executePrefixed();
                 case 0xCC: // CALL Z, nn
-                    return CALLZ(ref memoryBank.GetMemoryRef(registers.PC));
+                    return CALLZ(ref memoryBank.GetShortMemoryRef(registers.PC));
                 case 0xCD: // CALL nn
-                    return CALL(ref memoryBank.GetMemoryRef(registers.PC));
+                    return CALL(ref memoryBank.GetShortMemoryRef(registers.PC));
                 case 0xCE: // ADC A, n
                     return ADC(ref registers.A, ref memoryBank.GetMemoryRef(registers.PC));
                 case 0xCF: // RST 08H
@@ -463,9 +469,9 @@ namespace RGBE.Boy
                 case 0xD1: // POP DE
                     return POP(ref registers.DE);
                 case 0xD2: // JP NC, nn
-                    return JPNC(ref memoryBank.GetMemoryRef(registers.PC));
+                    return JPNC(ref memoryBank.GetShortMemoryRef(registers.PC));
                 case 0xD4: // CALL NC, nn
-                    return CALLNC(ref memoryBank.GetMemoryRef(registers.PC));
+                    return CALLNC(ref memoryBank.GetShortMemoryRef(registers.PC));
                 case 0xD5: // PUSH DE
                     return PUSH(ref registers.DE);
                 case 0xD6: // SUB A, n
@@ -477,9 +483,9 @@ namespace RGBE.Boy
                 case 0xD9: // RETI
                     return RETI();
                 case 0xDA: // JP C, nn
-                    return JPC(ref memoryBank.GetMemoryRef(registers.PC));
+                    return JPC(ref memoryBank.GetShortMemoryRef(registers.PC));
                 case 0xDC: // CALL C, nn
-                    return CALLC(ref memoryBank.GetMemoryRef(registers.PC));
+                    return CALLC(ref memoryBank.GetShortMemoryRef(registers.PC));
                 case 0xDE: // SBC A, n
                     return SBC(ref registers.A, ref memoryBank.GetMemoryRef(registers.PC));
                 case 0xDF: // RST 18H
@@ -1446,7 +1452,43 @@ namespace RGBE.Boy
         /// <returns>4 T-states</returns>
         private byte DAA()
         {
-            // TODO implement
+            int a = registers.A;
+            bool carry = registers.F.HasFlag(FlagRegister.Carry);
+
+            if (!registers.F.HasFlag(FlagRegister.Subtract))
+            {
+                if (registers.F.HasFlag(FlagRegister.HalfCarry) || (a & 0x0F) > 9)
+                {
+                    a += 0x06;
+                }
+                if (carry || a > 0x9F)
+                {
+                    a += 0x60;
+                    registers.F |= FlagRegister.Carry;
+                }
+                else
+                {
+                    registers.F &= ~FlagRegister.Carry;
+                }
+            }
+            else
+            {
+                if (registers.F.HasFlag(FlagRegister.HalfCarry))
+                {
+                    a = (a - 0x06) & 0xFF;
+                }
+                if (carry)
+                {
+                    a = (a - 0x60) & 0xFF;
+                }
+            }
+
+            registers.A = (byte)(a & 0xFF);
+            registers.F &= ~FlagRegister.HalfCarry;
+            registers.F = (registers.A == 0)
+                ? (registers.F | FlagRegister.Zero)
+                : (registers.F & ~FlagRegister.Zero);
+
             return 4;
         }
 
@@ -1495,8 +1537,8 @@ namespace RGBE.Boy
         /// <returns></returns>
         private byte Halt()
         {
-            // TODO implement HALT
-            return 0;
+            halted = true;
+            return 4;
         }
 
         /// <summary>
@@ -1670,7 +1712,7 @@ namespace RGBE.Boy
         {
             if (!registers.F.HasFlag(FlagRegister.Zero))
             {
-                registers.PC = memoryBank.GetMemoryRef(registers.SP);
+                registers.PC = memoryBank.GetShortMemoryRef(registers.SP);
                 registers.SP += 2;
                 return 20;
             }
@@ -1684,7 +1726,7 @@ namespace RGBE.Boy
         /// <returns>12 T-states</returns>
         private byte POP(ref ushort value)
         {
-            value = memoryBank.GetMemoryRef(registers.SP);
+            value = memoryBank.GetShortMemoryRef(registers.SP);
             registers.SP += 2;
             return 12;
         }
@@ -1694,13 +1736,14 @@ namespace RGBE.Boy
         /// </summary>
         /// <param name="offset">Location to jump to</param>
         /// <returns>16 T-states if passes, 12 if it doesn't pass.</returns>
-        private byte JPNZ(ref byte offset)
+        private byte JPNZ(ref ushort offset)
         {
             if (!registers.F.HasFlag(FlagRegister.Zero))
             {
                 registers.PC = offset;
                 return 16;
             }
+            registers.PC += 2;
             return 12;
         }
 
@@ -1709,13 +1752,14 @@ namespace RGBE.Boy
         /// </summary>
         /// <param name="offset">Location to jump to</param>
         /// <returns>16 T-states if passes, 12 if it doesn't pass.</returns>
-        private byte JPZ(ref byte offset)
+        private byte JPZ(ref ushort offset)
         {
             if (registers.F.HasFlag(FlagRegister.Zero))
             {
                 registers.PC = offset;
                 return 16;
             }
+            registers.PC += 2;
             return 12;
         }
 
@@ -1724,7 +1768,7 @@ namespace RGBE.Boy
         /// </summary>
         /// <param name="offset">Location to jump to</param>
         /// <returns>16 T-states</returns>
-        private byte JP(ref byte offset)
+        private byte JP(ref ushort offset)
         {
             registers.PC = offset;
             return 16;
@@ -1735,13 +1779,14 @@ namespace RGBE.Boy
         /// </summary>
         /// <param name="offset">Location to jump to.</param>
         /// <returns>16 T-states if passes, 12 if not.</returns>
-        private byte JPNC(ref byte offset)
+        private byte JPNC(ref ushort offset)
         {
             if (!registers.F.HasFlag(FlagRegister.Carry))
             {
                 registers.PC = offset;
                 return 16;
             }
+            registers.PC += 2;
             return 12;
         }
 
@@ -1750,13 +1795,14 @@ namespace RGBE.Boy
         /// </summary>
         /// <param name="offset">Location to jump to.</param>
         /// <returns>16 T-states if passes, 12 if not.</returns>
-        private byte JPC(ref byte offset)
+        private byte JPC(ref ushort offset)
         {
             if (registers.F.HasFlag(FlagRegister.Carry))
             {
                 registers.PC = offset;
                 return 16;
             }
+            registers.PC += 2;
             return 12;
         }
 
@@ -1765,13 +1811,18 @@ namespace RGBE.Boy
         /// </summary>
         /// <param name="offset">Offset to call</param>
         /// <returns>24 T-states if succeeds, 12 if not.</returns>
-        private byte CALLNC(ref byte offset)
+        private byte CALLNC(ref ushort offset)
         {
             if (!registers.F.HasFlag(FlagRegister.Carry))
             {
-                // TODO implement
+                ushort dest = offset;
+                registers.PC += 2;
+                registers.SP -= 2;
+                Unsafe.WriteUnaligned(ref memoryBank.GetMemoryRef(registers.SP), registers.PC);
+                registers.PC = dest;
                 return 24;
             }
+            registers.PC += 2;
             return 12;
         }
 
@@ -1780,14 +1831,18 @@ namespace RGBE.Boy
         /// </summary>
         /// <param name="offset">Offset to call</param>
         /// <returns>24 T-states if succeeds, 12 if not.</returns>
-        private byte CALLNZ(ref byte offset)
+        private byte CALLNZ(ref ushort offset)
         {
             if (!registers.F.HasFlag(FlagRegister.Zero))
             {
-                // TODO implement?>??? 
-                registers.PC = offset;
+                ushort dest = offset;
+                registers.PC += 2;
+                registers.SP -= 2;
+                Unsafe.WriteUnaligned(ref memoryBank.GetMemoryRef(registers.SP), registers.PC);
+                registers.PC = dest;
                 return 24;
             }
+            registers.PC += 2;
             return 12;
         }
 
@@ -1799,7 +1854,7 @@ namespace RGBE.Boy
         private byte PUSH(ref ushort value)
         {
             registers.SP -= 2;
-            // TODO implement
+            Unsafe.WriteUnaligned(ref memoryBank.GetMemoryRef(registers.SP), value);
             return 16;
         }
 
@@ -1810,7 +1865,9 @@ namespace RGBE.Boy
         /// <returns>16 T-states</returns>
         private byte RST(byte offset)
         {
-            // TODO implement
+            registers.SP -= 2;
+            Unsafe.WriteUnaligned(ref memoryBank.GetMemoryRef(registers.SP), registers.PC);
+            registers.PC = offset;
             return 16;
         }
 
@@ -1822,7 +1879,7 @@ namespace RGBE.Boy
         {
             if (registers.F.HasFlag(FlagRegister.Zero))
             {
-                registers.PC = memoryBank.GetMemoryRef(registers.SP);
+                registers.PC = memoryBank.GetShortMemoryRef(registers.SP);
                 registers.SP += 2;
                 return 20;
             }
@@ -1835,7 +1892,7 @@ namespace RGBE.Boy
         /// <returns>16 T-states</returns>
         private byte RET()
         {
-            registers.PC = memoryBank.GetMemoryRef(registers.SP);
+            registers.PC = memoryBank.GetShortMemoryRef(registers.SP);
             registers.SP += 2;
             return 16;
         }
@@ -1848,7 +1905,7 @@ namespace RGBE.Boy
         {
             if (!registers.F.HasFlag(FlagRegister.Carry))
             {
-                registers.PC = memoryBank.GetMemoryRef(registers.SP);
+                registers.PC = memoryBank.GetShortMemoryRef(registers.SP);
                 registers.SP += 2;
                 return 20;
             }
@@ -1861,7 +1918,8 @@ namespace RGBE.Boy
         /// <returns>16 T-states</returns>
         private byte RETI()
         {
-            // TODO implement
+            registers.PC = memoryBank.GetShortMemoryRef(registers.SP);
+            registers.SP += 2;
             return 16;
         }
 
@@ -1873,7 +1931,7 @@ namespace RGBE.Boy
         {
             if (registers.F.HasFlag(FlagRegister.Carry))
             {
-                registers.PC = memoryBank.GetMemoryRef(registers.SP);
+                registers.PC = memoryBank.GetShortMemoryRef(registers.SP);
                 registers.SP += 2;
                 return 20;
             }
@@ -1885,13 +1943,18 @@ namespace RGBE.Boy
         /// </summary>
         /// <param name="offset">Offset to call</param>
         /// <returns>24 T-states if passes, 12 if not.</returns>
-        private byte CALLZ(ref byte offset)
+        private byte CALLZ(ref ushort offset)
         {
             if (registers.F.HasFlag(FlagRegister.Zero))
             {
-                // TODO implement
+                ushort dest = offset;
+                registers.PC += 2;
+                registers.SP -= 2;
+                Unsafe.WriteUnaligned(ref memoryBank.GetMemoryRef(registers.SP), registers.PC);
+                registers.PC = dest;
                 return 24;
             }
+            registers.PC += 2;
             return 12;
         }
 
@@ -1900,18 +1963,13 @@ namespace RGBE.Boy
         /// </summary>
         /// <param name="offset">Offset to call</param>
         /// <returns>24 T-states</returns>
-        private byte CALL(ref byte offset)
+        private byte CALL(ref ushort offset)
         {
-            // push next address to stack
+            ushort dest = offset;
+            registers.PC += 2;
             registers.SP -= 2;
-
-            // TODO SLEEP AND RETHINK BITCH https://rgbds.gbdev.io/docs/v0.7.0/gbz80.7#CALL_n16
-            // just so we can fetch the next instruction's address
-            registers.PC+=2;
             Unsafe.WriteUnaligned(ref memoryBank.GetMemoryRef(registers.SP), registers.PC);
-            // set PC to offset
-            registers.PC = offset;
-
+            registers.PC = dest;
             return 24;
         }
 
@@ -1920,13 +1978,18 @@ namespace RGBE.Boy
         /// </summary>
         /// <param name="offset">Offset to call</param>
         /// <returns>24 T-states if passes, 12 if not.</returns>
-        private byte CALLC(ref byte offset)
+        private byte CALLC(ref ushort offset)
         {
             if (registers.F.HasFlag(FlagRegister.Carry))
             {
-                // TODO implement
+                ushort dest = offset;
+                registers.PC += 2;
+                registers.SP -= 2;
+                Unsafe.WriteUnaligned(ref memoryBank.GetMemoryRef(registers.SP), registers.PC);
+                registers.PC = dest;
                 return 24;
             }
+            registers.PC += 2;
             return 12;
         }
 

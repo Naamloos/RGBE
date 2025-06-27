@@ -78,11 +78,6 @@ namespace RGBE.Boy
                 return ref MemoryBank.dummy;
             }
 
-            if (addr >= 0xFF80 && addr <= 0xFFFE)
-            {
-                return ref MemoryBank.dummy;
-            }
-
             if(addr is >= 0xE000 and <= 0xFDFF)
             {
                 // WRAM Shadow Copy
