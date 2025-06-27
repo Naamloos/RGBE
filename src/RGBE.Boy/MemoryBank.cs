@@ -1,4 +1,4 @@
-using System.Net.Sockets;
+using System;
 using System.Runtime.CompilerServices;
 
 namespace RGBE.Boy
@@ -25,14 +25,17 @@ namespace RGBE.Boy
             0xF5, 0x06, 0x19, 0x78, 0x86, 0x23, 0x05, 0x20, 0xFB, 0x86, 0x20, 0xFE, 0x3E, 0x01, 0xE0, 0x50
         };
 
-        private byte[] rom = new byte[32768];
+        private byte[] rom = Array.Empty<byte>();
 
         private byte[] memory = new byte[65536];
 
+        private static byte dummy;
+
         private bool inBios = true;
 
-        public MemoryBank(byte[] rom)
+        public MemoryBank(byte[] romData)
         {
+            rom = romData;
             bios.CopyTo(memory, 0);
         }
 
@@ -40,6 +43,7 @@ namespace RGBE.Boy
         {
             memory = new byte[65536];
             bios.CopyTo(memory, 0);
+            inBios = true;
         }
 
         public ref ushort GetShortMemoryRef(ushort addr)
@@ -63,10 +67,15 @@ namespace RGBE.Boy
                 0xFF80 - 0xFFFE
             */
 
-            if(inBios && (addr & 0x0F00) == 0x0100)
+            if (inBios && addr == 0x0100)
             {
                 rom.CopyTo(memory, 0);
                 inBios = false;
+            }
+
+            if (addr >= 0xFEA0 && addr <= 0xFEFF)
+            {
+                return ref MemoryBank.dummy;
             }
 
             if(addr is >= 0xE000 and <= 0xFDFF)
